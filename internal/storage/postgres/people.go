@@ -64,6 +64,7 @@ func (r *PeoplePostgres) Update(ctx context.Context, people domain.People) (doma
 		"nationality": dboPeople.Nationality,
 		"updated_at":  time.Now(),
 	}
+
 	result := r.db.WithContext(ctx).Clauses(clause.Returning{}).Model(&dboPeople).Updates(updates)
 
 	if result.RowsAffected == 0 {
@@ -77,13 +78,13 @@ func (r *PeoplePostgres) Update(ctx context.Context, people domain.People) (doma
 	return dboPeople.ToDomain(), nil
 }
 
-func (r *PeoplePostgres) PeopleList(ctx context.Context, count int) ([]domain.People, error) {
+func (r *PeoplePostgres) PeopleList(ctx context.Context, page int) ([]domain.People, error) {
 	dboPeople := make([]dbo.People, 0)
 	var result *gorm.DB
-	if count == 0 {
+	if page == 0 {
 		result = r.db.WithContext(ctx).Select("id, first_name, last_name, middle_name, gender, age, nationality").Find(&dboPeople)
 	} else {
-		result = r.db.WithContext(ctx).Select("id, first_name, last_name, middle_name, gender, age, nationality").Limit(count).Find(&dboPeople)
+		result = r.db.WithContext(ctx).Select("id, first_name, last_name, middle_name, gender, age, nationality").Offset(10 * (page - 1)).Limit(10).Find(&dboPeople)
 	}
 	if result.Error != nil {
 		return nil, errors.Wrap(result.Error, "postgres gorm people list")

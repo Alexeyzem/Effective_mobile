@@ -19,7 +19,7 @@ import (
 type PeopleService interface {
 	Create(ctx context.Context, people domain.People) (domain.People, error)
 	People(ctx context.Context, id string) (domain.People, error)
-	PeopleList(ctx context.Context, count int) ([]domain.People, error)
+	PeopleList(ctx context.Context, page int) ([]domain.People, error)
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, people domain.People) (domain.People, error)
 }
@@ -60,17 +60,17 @@ func (pc *PeopleController) handleGetPeopleList(c echo.Context) error {
 		return pc.FailResponse(c, fmt.Errorf("%w: %v", err, errors.New("bad request")), pc.log)
 	}
 
-	count := c.QueryParam("count")
-	if count == "" {
-		count = "0"
+	page := c.QueryParam("page")
+	if page == "" {
+		page = "0"
 	}
-	log := logger.WithPrefix(pc.log, "Count", count)
-	cnt, err := strconv.Atoi(count)
+	log := logger.WithPrefix(pc.log, "Page", page)
+	pg, err := strconv.Atoi(page)
 	if err != nil {
 		return pc.FailResponse(c, fmt.Errorf("%w: %v", err, errors.New("bad request")), log)
 	}
 
-	people, err := pc.peopleService.PeopleList(ctx, cnt)
+	people, err := pc.peopleService.PeopleList(ctx, pg)
 	if err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service PeopleList"), log)
 	}
@@ -179,27 +179,27 @@ func (pc *PeopleController) handleUpdatePeople(c echo.Context) error {
 	id := c.Param("id")
 	log := logger.WithPrefix(pc.log, "PeopleId", id)
 
-	people := new(v1.CommonPeopleRequest)
+	people := new(v1.UpdatePeopleRequest)
 	if err := c.Bind(people); err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service update"), log)
 	}
 
-	err := enrichment(fmt.Sprintf("https://api.agify.io/?name=%s", people.FirstName), people)
+	err := enrichment(fmt.Sprintf("https://api.agify.io/?name=%s", people.FirstName), &people.CommonPeopleRequest)
 	if err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service create"), pc.log)
 	}
 
-	err = enrichment(fmt.Sprintf("https://api.genderize.io/?name=%s", people.FirstName), people)
+	err = enrichment(fmt.Sprintf("https://api.genderize.io/?name=%s", people.FirstName), &people.CommonPeopleRequest)
 	if err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service create"), pc.log)
 	}
 
-	err = enrichmentNation(people)
+	err = enrichmentNation(&people.CommonPeopleRequest)
 	if err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service create"), pc.log)
 	}
 
-	updatedPeople, err := pc.peopleService.Update(ctx, people.ToDomain())
+	updatedPeople, err := pc.peopleService.Update(ctx, people.ToDomain(id))
 
 	if err != nil {
 		return pc.FailResponse(c, errors.Wrap(err, "people service update"), log)

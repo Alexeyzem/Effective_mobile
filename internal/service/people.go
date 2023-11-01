@@ -10,7 +10,7 @@ import (
 type PeopleRepository interface {
 	Create(ctx context.Context, people domain.People) (domain.People, error)
 	Find(ctx context.Context, id string) (domain.People, error)
-	PeopleList(ctx context.Context, count int) ([]domain.People, error)
+	PeopleList(ctx context.Context, page int) ([]domain.People, error)
 	Update(ctx context.Context, people domain.People) (domain.People, error)
 	Delete(ctx context.Context, id string) error
 }
@@ -42,8 +42,8 @@ func (p *People) Create(ctx context.Context, people domain.People) (domain.Peopl
 	return createdPeople, nil
 }
 
-func (p *People) PeopleList(ctx context.Context, count int) ([]domain.People, error) {
-	peopleList, err := p.repo.PeopleList(ctx, count)
+func (p *People) PeopleList(ctx context.Context, page int) ([]domain.People, error) {
+	peopleList, err := p.repo.PeopleList(ctx, page)
 	if err != nil {
 		return nil, errors.Wrap(err, "repository get people list")
 	}

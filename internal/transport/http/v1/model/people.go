@@ -25,6 +25,22 @@ func (r *CommonPeopleRequest) ToDomain() domain.People {
 	}
 }
 
+type UpdatePeopleRequest struct {
+	CommonPeopleRequest
+}
+
+func (r *UpdatePeopleRequest) ToDomain(id string) domain.People {
+	return domain.People{
+		ID:          id,
+		FirstName:   r.FirstName,
+		MiddleName:  r.MiddleName,
+		LastName:    r.LastName,
+		Age:         r.Age,
+		Gender:      r.Gender,
+		Nationality: r.Nationality,
+	}
+}
+
 type PeopleList struct {
 	People []CommonPeopleRequest `json:"people"`
 }
